@@ -1,0 +1,38 @@
+% Parámetros
+Kp = 2; Ki = 1; Kd = 0.5; T = 0.1;
+N = 100;                        % número de muestras
+t_total = N * T;                % tiempo total ajustado
+t = 0:T:t_total - T;            % vector de tiempo
+
+e = zeros(1, N);
+e(20:30) = 0.5;
+e(50:70) = 1.5;
+
+u = pid_discreto(e, Kp, Ki, Kd, T);
+
+subplot(2,1,1);
+plot(t, e, 'b', 'LineWidth', 2); grid on;
+ylabel('e[k]'); title('Error');
+
+subplot(2,1,2);
+plot(t, u, 'r', 'LineWidth', 2); grid on;
+ylabel('u[k]'); xlabel('Tiempo [s]');
+title('Salida PID Discreto');
+
+%%
+
+function u = pid_discreto(e, Kp, Ki, Kd, T)
+    n = length(e);
+    u = zeros(1, n);
+    s = zeros(1, n);
+
+    s(1) = e(1);
+    u(1) = Kp * e(1);
+
+    for k = 2:n
+        s(k) = s(k-1) + e(k);
+        derivada = (e(k) - e(k-1)) / T;
+        u(k) = Kp * e(k) + Ki * T * s(k) + Kd * derivada;
+    end
+end
+
