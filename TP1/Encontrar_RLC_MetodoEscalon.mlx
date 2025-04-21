@@ -1,0 +1,45 @@
+datos = readtable("C:\Users\ferok\UNIVERSIDAD\SISTEMAS DE CONTROL 2\PUCHETA\TPs\TP1\Curvas_Medidas_RLC_2025.xls");
+datos.Properties.VariableNames = {'Tiempo', 'Corriente', 'V_C','V_e','V_R'}
+
+
+% cargamos a cada vecotr:
+t = datos.Tiempo;
+I = datos.Corriente;
+vc = datos.V_C;
+ve = datos.V_e;
+vr = datos.V_R;
+
+% Crear una figura con subplots
+figure;
+
+% Subplot 1: Graficar Corriente
+subplot(4,1,1);
+plot(t, I, 'b', 'LineWidth', 2);
+xlabel('Tiempo');
+ylabel('Corriente');
+title('Corriente vs Tiempo');
+grid on;
+
+% Subplot 2: Graficar V_C
+subplot(4,1,2);
+plot(t, vc , 'r', 'LineWidth', 2);
+xlabel('Tiempo');
+ylabel('V_C');
+title('V_C vs Tiempo');
+grid on;
+
+% Subplot 3: Graficar V_e
+subplot(4,1,3); 
+plot(t, ve,  'k', 'LineWidth', 2);
+xlabel('Tiempo');
+ylabel('V_e');
+title('V_e vs Tiempo');
+grid on;
+
+% Subplot 4: Graficar V_R
+subplot(4,1,4); 
+plot(t, vr,  'g', 'LineWidth', 2);
+xlabel('Tiempo');
+ylabel('V_R');
+title('V_R vs Tiempo');
+grid on;
