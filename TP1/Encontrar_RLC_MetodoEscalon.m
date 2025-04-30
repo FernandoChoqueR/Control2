@@ -1,48 +1,12 @@
+Estimacion de los 3 puntos equidistantes:
+% Cargar datos
 datos = readtable("C:\Users\ferok\UNIVERSIDAD\SISTEMAS DE CONTROL 2\PUCHETA\TPs\TP1\Curvas_Medidas_RLC_2025.xls");
-datos.Properties.VariableNames = {'Tiempo', 'Corriente', 'V_C','V_e','V_R'}
+datos.Properties.VariableNames = {'Tiempo', 'Corriente', 'V_C','V_e','V_R'};
 
-
-% cargamos a cada vecotr:
+% Selección de señales
 t = datos.Tiempo;
-I = datos.Corriente;
 vc = datos.V_C;
-ve = datos.V_e;
-vr = datos.V_R;
-
-% Crear una figura con subplots
-figure;
-
-% Subplot 1: Graficar Corriente
-subplot(4,1,1);
-plot(t, I, 'b', 'LineWidth', 2);
-xlabel('Tiempo');
-ylabel('Corriente');
-title('Corriente vs Tiempo');
-grid on;
-
-% Subplot 2: Graficar V_C
-subplot(4,1,2);
-plot(t, vc , 'r', 'LineWidth', 2);
-xlabel('Tiempo');
-ylabel('V_C');
-title('V_C vs Tiempo');
-grid on;
-
-% Subplot 3: Graficar V_e
-subplot(4,1,3); 
-plot(t, ve,  'k', 'LineWidth', 2);
-xlabel('Tiempo');
-ylabel('V_e');
-title('V_e vs Tiempo');
-grid on;
-
-% Subplot 4: Graficar V_R
-subplot(4,1,4); 
-plot(t, vr,  'g', 'LineWidth', 2);
-xlabel('Tiempo');
-ylabel('V_R');
-title('V_R vs Tiempo');
-grid on;
+I = datos.Corriente;
 
 % Normalizar VC para facilitar el análisis (0 a 1)
 vc_norm = (vc - min(vc)) / (max(vc) - min(vc));
@@ -56,8 +20,8 @@ umbral = 0.01;  % ajustar según la suavidad de la señal
 inicio_idx = find(dvc > umbral, 1, 'first');
 
 % Desde el punto de inicio, tomamos tres puntos equiespaciados
-h = 200; % separación entre muestras (ajustable o incluso adaptativa)
-idx1 = inicio_idx;
+h = 45; % separación entre muestras (ajustable o incluso adaptativa)
+idx1 = inicio_idx+65;
 idx2 = idx1 + h;
 idx3 = idx2 + h;
 
@@ -84,7 +48,7 @@ omega_d = pi / h_tiempo;
 omega_n = omega_d / sqrt(1 - zeta^2);
 
 %Calcular parametros R L C , Hay que suponer un valor? --> C=
-C = 1e-6  % en Faradios --> Este valor asignamos nosotros.
+C = 5e-6  % en Faradios --> Este valor asignamos nosotros.
 
 L = 1 / (omega_n^2 * C)
 R = 2 * zeta * sqrt(L / C)
@@ -106,3 +70,103 @@ ylabel('V_C (V)');
 title('Selección automática de puntos para método de Chen');
 legend('V_C(t)', 'Puntos usados');
 grid on;
+
+Estimacion de Funcion de transferencia por Chen:
+
+% t1 = 0.0103;  t2 = 0.0120;  t3 = 0.0138;
+% y1 = 4.8248; y2 = 11.8104; y3 = 11.9950;
+
+% t1 = 0.0100 ; t2 = 0.0118 ; t3 = 0.0135 ;
+% y1 = 0.0000; y2 = 11.6813; y3 = 11.9916 ;
+
+%t1 = 0.0105;  t2 = 0.0115 ; t3 = 0.0125;  %cero cpmplejo
+%y1 = 7.7301; y2 = 11.4645; y3 = 11.9328;
+
+
+%t1 = 0.0105 ; t2 = 0.0112; t3 = 0.0119;     %Grafica--> Fase no minima
+%y1 = 7.7301; y2 = 11.0017; y3 = 11.7666;
+
+% t1 = 0.0105 ; t2 = 0.0112 ; t3 = 0.0118 ;
+% y1 = 7.7301; y2 = 10.8925; y3 = 11.7127;
+
+% t1 = 0.0105 ; t2 = 0.0110 ; t3 = 0.0114;
+% y1 = 7.7301 ; y2 = 10.3224 ; y3 = 11.3409;
+
+u = 12;
+y_inf = 12;
+
+sys_est = chen_estimate_tf(t1, y1, t2, y2, t3, y3, u, y_inf);
+
+% Mostrar función de transferencia
+disp('Función de transferencia estimada:');
+sys_est
+
+% Ceros y polos
+z = zero(sys_est);
+p = pole(sys_est);
+
+disp('Ceros del sistema estimado:');
+disp(z);
+
+disp('Polos del sistema estimado:');
+disp(p);
+
+% Graficar respuesta al impulso (útil para ver fase no mínima)
+figure;
+impulse(sys_est);
+title('Respuesta al impulso del sistema estimado');
+grid on;
+
+step(u*sys_est);
+title('Respuesta al Escalon');
+grid on; grid minor;
+
+Metodo de chen para tres puntos equisdistantes:
+function sys_est = chen_estimate_tf(t1, y1, t2, y2, t3, y3, u0, y_inf)
+% MÉTODO DE CHEN PARA ESTIMACIÓN DE SISTEMA DE 2º ORDEN + CERO
+% Entrada:
+%   t1, t2, t3  - tiempos de los tres puntos (equiespaciados preferentemente)
+%   y1, y2, y3  - valores medidos en esos tiempos
+%   u0          - amplitud del escalón aplicado
+%   y_inf       - valor final alcanzado por la salida
+%
+% Salida:
+%   sys_est     - función de transferencia estimada (objeto tf)
+
+    % Paso 1: Ganancia estática
+    K = y_inf / u0;                 %cuarto punto
+
+    % Paso 2: Calcular k1, k2, k3
+    k1 = y1 / (K * u0) - 1;
+    k2 = y2 / (K * u0) - 1;
+    k3 = y3 / (K * u0) - 1;
+
+    % Paso 3: Discriminante beta_e
+    beta_e = 4 * k1^3 * k3 - 3 * k1^2 * k2^2 - 4 * k2^3 + k3^2 + 6 * k1 * k2 * k3;
+
+    % Verificación de validez
+    if beta_e < 0
+         error('Discriminante negativo. El modelo no es válido con estos puntos.');
+    end
+
+    % Paso 4: Calcular alphas
+    alpha1 = (k1 * k2 + k3 - sqrt(beta_e)) / (2 * (k1^2 + k2));
+    alpha2 = (k1 * k2 + k3 + sqrt(beta_e)) / (2 * (k1^2 + k2));
+
+    % Paso 5: Beta
+    beta = (k1 + alpha2) / (alpha1 - alpha2);
+
+    % Paso 6: Constantes de tiempo
+    T1 = -t1 / log(alpha1);
+    T2 = -t1 / log(alpha2);
+    T3 = beta * (T1 - T2) + T1;
+
+    % Paso 7: Función de transferencia
+    num = K * [T3 1];
+    den = conv([T1 1], [T2 1]);
+    sys_est = tf(num, den);
+end
+
+
+
+
